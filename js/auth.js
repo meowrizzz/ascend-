@@ -20,6 +20,29 @@ export const auth = {
     const { data } = await supabase.auth.getSession();
     return data.session || null;
   },
+  // Race-free startup restore: wait for the client's authoritative INITIAL_SESSION
+  // event (emitted after the persisted session is loaded and, if needed, refreshed),
+  // with getSession() as a fallback. Avoids deciding "no session" before the client
+  // has finished initializing.
+  getInitialSession() {
+    if (!supabase) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      let done = false, sub = null;
+      const finish = (s) => { if (done) return; done = true; try { sub && sub.unsubscribe(); } catch { /* ignore */ } resolve(s || null); };
+      try {
+        const { data } = supabase.auth.onAuthStateChange((event, sess) => {
+          // onAuthStateChange replays INITIAL_SESSION to each new subscriber, so this
+          // fires even if the client already initialized before we subscribed.
+          if (event === 'INITIAL_SESSION') finish(sess);
+          else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && sess) finish(sess);
+        });
+        sub = data && data.subscription;
+      } catch { /* fall through to fallback */ }
+      // Fallback: if the event never arrives, await getSession() (which also awaits init).
+      setTimeout(() => { if (!done) supabase.auth.getSession().then(({ data }) => finish(data && data.session)).catch(() => finish(null)); }, 4000);
+      setTimeout(() => finish(null), 12000);   // hard safety cap
+    });
+  },
   async getUser() {
     const s = await this.getSession();
     return s ? s.user : null;

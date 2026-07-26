@@ -24,8 +24,6 @@ function enterApp() {
 function enterLocal() { try { localStorage.setItem(LOCAL_FLAG, '1'); } catch { /* ignore */ } enterApp(); }
 function showAuth(mode) { markActive(); entered = entered && false; appEl() && appEl().classList.add('gated'); authRoot() && authRoot().classList.remove('hidden'); ui.show(mode || 'login'); }
 
-const timeout = ms => new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms));
-
 async function start() {
   markActive();
   ui = new AuthUI(authRoot(), {
@@ -41,15 +39,12 @@ async function start() {
   if (recovery) { ui.show('reset'); return; }
 
   ui.show('loading');
-  let session = null, errored = false;
-  // getSession() reads the persisted session from localStorage (and refreshes if
-  // needed). Give it a generous timeout so a slow refresh doesn't misfire, but
-  // never reject-race a fast local read.
-  try { session = await Promise.race([auth.getSession(), timeout(8000)]); }
-  catch { errored = true; }
+  // Wait for the Supabase client's authoritative INITIAL_SESSION (persisted session
+  // loaded/refreshed) before deciding. This removes the startup race that could show
+  // the login screen while a valid session was still being restored.
+  const session = await auth.getInitialSession();
 
   if (session) { onAuthedSession(session); return; }
-  if (errored) { ui.show('offline'); return; }
   if (localStorage.getItem(LOCAL_FLAG)) { enterApp(); return; }  // user explicitly chose local
   ui.show('login');                                             // no session → auth screen is the entry point
 }
