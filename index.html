@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0B0F14" />
+<title>Ascend — новая версия себя</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- Ambient background glows -->
+  <div class="bg-fx" aria-hidden="true">
+    <span class="glow glow--green"></span>
+    <span class="glow glow--blue"></span>
+    <span class="glow glow--violet"></span>
+  </div>
+
+  <!-- Auth gate (shown until the session is resolved; prevents any flash of the app) -->
+  <div id="auth-root" class="auth-root">
+    <div class="auth-screen"><div class="auth-card">
+      <div class="auth-logo">⛰️</div>
+      <div class="auth-title">Ascend</div>
+      <div class="auth-spinner" aria-label="Загрузка"></div>
+    </div></div>
+  </div>
+
+  <!-- App shell (hidden until the auth gate lets it through) -->
+  <div id="app" class="app gated">
+    <main id="screens" class="screens">
+      <!-- Screens are injected by JS -->
+    </main>
+
+    <!-- Bottom navigation -->
+    <nav class="bottom-nav" id="nav">
+      <button class="nav-btn" data-screen="home" data-i18n-aria="nav.home">
+        <span class="nav-ico">🏠</span><span class="nav-label" data-i18n="nav.home">Главная</span>
+      </button>
+      <button class="nav-btn" data-screen="habits" data-i18n-aria="nav.habits">
+        <span class="nav-ico">🔥</span><span class="nav-label" data-i18n="nav.habits">Привычки</span>
+      </button>
+      <button class="nav-btn" data-screen="stats" data-i18n-aria="nav.stats">
+        <span class="nav-ico">📊</span><span class="nav-label" data-i18n="nav.stats">Статистика</span>
+      </button>
+      <button class="nav-btn" data-screen="achievements" data-i18n-aria="nav.achievements">
+        <span class="nav-ico">🏆</span><span class="nav-label" data-i18n="nav.achievements">Награды</span>
+      </button>
+      <button class="nav-btn" data-screen="profile" data-i18n-aria="nav.profile">
+        <span class="nav-ico">👤</span><span class="nav-label" data-i18n="nav.profile">Профиль</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Floating crisis button (hidden until the app is entered & re-evaluated) -->
+  <button id="crisisBtn" class="crisis-fab hidden" data-i18n-aria="crisis.fab" aria-label="Мне хочется сорваться">
+    <span class="crisis-fab__pulse"></span>
+    <span class="crisis-fab__ico">🆘</span>
+  </button>
+
+  <!-- Modal root -->
+  <div id="modalRoot" class="modal-root" aria-hidden="true"></div>
+
+  <!-- Onboarding root -->
+  <div id="onboardingRoot" class="onboarding-root" aria-hidden="true"></div>
+
+  <!-- Toast root -->
+  <div id="toastRoot" class="toast-root" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/app.js"></script>
+  <!-- Optional cloud auth + sync (Supabase). App works fully without it. Relative paths for GitHub Pages subpaths. -->
+  <script type="module" src="js/auth-gate.js"></script>
+  <script type="module" src="js/cloud-sync.js"></script>
+</body>
+</html>
