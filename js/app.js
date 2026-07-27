@@ -1689,8 +1689,17 @@ function runSelfCheck() {
   const lvl = levelFromXp(xp).level;
   if (!isFinite(lvl) || lvl < 1) add('level', 'level invalid');
 
-  const result = { ok: issues.length === 0, issues, summary: { schemaVersion: s.schemaVersion, habits: (s.habits || []).length, journalDays: Object.keys(s.journal || {}).length, achievements: Object.keys(s.achievements || {}).length, crisisWins: (s.crisisWins || []).length, xp, level: lvl } };
-  return result; // no journal text / private names / notes are ever included
+  // Sync metadata invariants (non-sensitive fields only).
+  let meta = null;
+  try { meta = JSON.parse(localStorage.getItem('ascend_sync_meta') || 'null'); } catch { add('sync.meta', 'sync meta not parseable'); }
+  if (meta && typeof meta === 'object') {
+    if ('revision' in meta && meta.revision != null && (typeof meta.revision !== 'number' || !isFinite(meta.revision) || meta.revision < 0)) add('sync.revision', 'sync revision invalid');
+    if ('pendingLocal' in meta && typeof meta.pendingLocal !== 'boolean') add('sync.pendingLocal', 'pendingLocal not boolean');
+    if ('userId' in meta && meta.userId != null && typeof meta.userId !== 'string') add('sync.userId', 'sync userId invalid');
+  }
+
+  const result = { ok: issues.length === 0, issues, summary: { schemaVersion: s.schemaVersion, habits: (s.habits || []).length, journalDays: Object.keys(s.journal || {}).length, achievements: Object.keys(s.achievements || {}).length, crisisWins: (s.crisisWins || []).length, xp, level: lvl, syncMeta: meta ? { revision: meta.revision ?? null, pendingLocal: !!meta.pendingLocal, hasUser: !!meta.userId } : null } };
+  return result; // no journal text / private names / notes / tokens are ever included
 }
 if (typeof window !== 'undefined') window.runSelfCheck = runSelfCheck;
 

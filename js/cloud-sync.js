@@ -98,6 +98,17 @@ function applyCloud(row) {
   paused = false; dirty = false; setStatus('synced'); App().render();
   return true;
 }
+// Pure decision (testable): given the current server row (or null), the local
+// sync meta, and the user id — what should a push do?
+//   'conflict'         → both sides changed (server revision ahead of our baseline)
+//   'deleted-blocked'  → the row we had synced is GONE (deleted on another device);
+//                        a stale device must NOT silently re-create it (resurrection)
+//   'push'             → safe to upsert
+function resolvePushAction(cur, meta, uid) {
+  if (cur && typeof meta.revision === 'number' && cur.revision > meta.revision) return 'conflict';
+  if (!cur && typeof meta.revision === 'number' && meta.userId === uid) return 'deleted-blocked';
+  return 'push';
+}
 async function pushNow() {
   if (!session || paused) return;
   setStatus('syncing');
@@ -105,7 +116,9 @@ async function pushNow() {
     const { data: cur, error: selErr } = await supabase.from(STATE_TABLE).select('revision').eq('user_id', uid).maybeSingle();
     if (selErr) throw selErr;
     const meta = loadMeta();
-    if (cur && typeof meta.revision === 'number' && cur.revision > meta.revision) { setStatus('conflict'); return; }
+    const action = resolvePushAction(cur, meta, uid);
+    if (action === 'conflict') { setStatus('conflict'); return; }
+    if (action === 'deleted-blocked') { setStatus('conflict'); sdiag('remote row was deleted — refusing to resurrect from stale device'); return; }
     const { data, error } = await supabase.from(STATE_TABLE)
       .upsert({ user_id: uid, state_json: App().getState(), schema_version: SCHEMA_VERSION }, { onConflict: 'user_id' })
       .select('revision, updated_at').single();
@@ -313,6 +326,7 @@ async function doSignOut() {
 window.AscendCloud = {
   configured: cloudConfigured, auth, mountAccount, handleLocalWipe, beginSync, displayName,
   deleteCloudData, afterLocalWipe, isSignedIn,
+  _pushDecision: resolvePushAction,               // internal, for the dev self-check harness
   status: () => status, syncNow: () => { paused = false; pushNow(); },
 };
 

@@ -368,6 +368,11 @@ body {
 }
 .input:focus, .textarea:focus { border-color: var(--blue); background: var(--surface-2); }
 .textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
+/* Prevent iOS Safari from auto-zooming when focusing an input: font-size must be
+   >=16px on touch devices. Desktop keeps the 15px design. */
+@media (pointer: coarse) {
+  .input, .textarea, select.input { font-size: 16px; }
+}
 
 /* Chips / options ------------------------------------------------------ */
 .chips { display: flex; flex-wrap: wrap; gap: 9px; }
