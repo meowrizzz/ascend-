@@ -9,7 +9,7 @@
    ========================================================= */
 import { supabase, cloudConfigured } from './supabase-client.js';
 
-export const AUTH_BUILD = 'auth-sync-2026-07-27b';
+export const AUTH_BUILD = 'auth-delete-2026-07-27c';
 const DIAG = true;                                   // safe, non-sensitive logging
 const STORAGE_KEY = 'ascend_sb_auth';
 

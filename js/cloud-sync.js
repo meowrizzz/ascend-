@@ -211,6 +211,35 @@ function beginSync(sess) {
 }
 async function handleLocalWipe() { try { await auth.signOut(); } catch { /* ignore */ } saveMeta({}); session = null; uid = null; _syncedUid = null; status = 'local'; }
 
+const ddiag = (...a) => { try { console.info('[ascend-delete]', ...a); } catch { /* ignore */ } };
+
+/* Delete the signed-in user's cloud row (user_id from the session — never from
+   input). Verifies the row is actually gone (guards against a missing DELETE RLS
+   policy silently affecting 0 rows). Does NOT sign the user out. */
+async function deleteCloudData() {
+  if (!session || !uid) return { ok: false, reason: 'no_session' };
+  ddiag('cloud delete started');
+  try {
+    const { error } = await supabase.from(STATE_TABLE).delete().eq('user_id', uid);
+    if (error) { ddiag('cloud delete FAILED:', shortErr(error)); return { ok: false, error: shortErr(error) }; }
+    const still = await fetchRow();                 // must be gone now
+    if (still) { ddiag('cloud delete FAILED: row still present (add a DELETE RLS policy)'); return { ok: false, error: 'row_still_present' }; }
+    ddiag('cloud delete success');
+    return { ok: true };
+  } catch (e) { ddiag('cloud delete ERROR:', shortErr(e)); return { ok: false, error: shortErr(e) }; }
+}
+
+/* Called AFTER local storage was cleared. Clears sync metadata and resets sync
+   state so no stale revision offers to "restore" the deleted data — while keeping
+   the user authenticated (session/token untouched). */
+function afterLocalWipe() {
+  saveMeta({}); _syncedUid = null; dirty = false; paused = false;
+  status = session ? 'synced' : 'local';
+  ddiag('local cleared');
+  renderAccount(); App().refreshProfile();
+}
+const isSignedIn = () => !!session;
+
 /* ---- account card in Profile ---- */
 function mountAccount(card) { accountCard = card; renderAccount(); }
 function renderAccount() {
@@ -283,6 +312,7 @@ async function doSignOut() {
 /* ---- expose + init ---- */
 window.AscendCloud = {
   configured: cloudConfigured, auth, mountAccount, handleLocalWipe, beginSync, displayName,
+  deleteCloudData, afterLocalWipe, isSignedIn,
   status: () => status, syncNow: () => { paused = false; pushNow(); },
 };
 

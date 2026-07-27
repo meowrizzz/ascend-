@@ -1385,14 +1385,27 @@ function openDeleteAll() {
   openModal('center', `<div class="modal__head"><h2 class="h2">${esc(t('data.wipe'))}?</h2><button class="modal__close" data-close>×</button></div>
     <p class="danger-note">${esc(t('wipe.body'))}</p>
     <div class="field"><label>${esc(t('wipe.confirm'))} <b>${esc(t('wipe.word'))}</b></label><input class="input confirm-word" id="wipeWord" autocomplete="off" placeholder="${esc(t('wipe.word'))}"></div>
+    <div class="auth-msg err" id="wipeErr" style="min-height:0"></div>
     <div class="row mt24"><button class="btn btn--ghost" data-close>${esc(t('common.cancel'))}</button><button class="btn btn--danger" id="doWipe" disabled style="opacity:.5">${esc(t('data.wipe'))}</button></div>`);
-  const inp = $('#wipeWord'), btn = $('#doWipe');
-  inp.oninput = () => { const ok = inp.value.trim().toUpperCase() === t('wipe.word'); btn.disabled = !ok; btn.style.opacity = ok ? '1' : '.5'; };
+  const inp = $('#wipeWord'), btn = $('#doWipe'), err = $('#wipeErr');
+  inp.oninput = () => { const ok = inp.value.trim().toUpperCase() === t('wipe.word'); btn.disabled = !ok; btn.style.opacity = ok ? '1' : '.5'; err.textContent = ''; };
   btn.onclick = async () => {
     if (inp.value.trim().toUpperCase() !== t('wipe.word')) return;
-    // Sign out first so wiping the device never overwrites the cloud copy.
-    if (window.AscendCloud && window.AscendCloud.handleLocalWipe) { try { await window.AscendCloud.handleLocalWipe(); } catch { /* ignore */ } }
-    state = StorageService.deleteAllData(); showSaved(); closeModal(); habitTab = 'good'; catalogTab = 'good'; sensitiveRevealed = false; setLang(settings().language); applyStaticI18n(); applyAnimationLevel(); startOnboarding(); render(); toast('info', '🗑', t('toast.wiped'), '');
+    const C = window.AscendCloud;
+    // If signed in, delete the cloud row FIRST and wait for success. Only clear local
+    // data if the cloud delete succeeded — otherwise keep everything and show an error.
+    if (C && C.isSignedIn && C.isSignedIn()) {
+      btn.disabled = true; btn.style.opacity = '.6'; err.textContent = t('wipe.deleting');
+      let res; try { res = await C.deleteCloudData(); } catch { res = { ok: false }; }
+      if (!res || !res.ok) { btn.disabled = false; btn.style.opacity = '1'; err.textContent = t('wipe.cloudErr'); return; }
+    }
+    // Cloud row removed (or local-only mode): clear local + sync metadata, keep the
+    // user authenticated (session/token are preserved by deleteAllData).
+    state = StorageService.deleteAllData();
+    if (C && C.afterLocalWipe) C.afterLocalWipe();
+    showSaved(); closeModal(); habitTab = 'good'; catalogTab = 'good'; sensitiveRevealed = false;
+    setLang(settings().language); applyStaticI18n(); applyAnimationLevel(); startOnboarding(); render();
+    toast('info', '🗑', t('toast.wiped'), '');
   };
 }
 
