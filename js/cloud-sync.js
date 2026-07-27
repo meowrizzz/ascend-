@@ -17,6 +17,7 @@ import { supabase, cloudConfigured, STATE_TABLE, SCHEMA_VERSION } from './supaba
 import { auth } from './auth.js';
 
 const App = () => window.AscendApp;
+const sdiag = (...a) => { try { console.info('[ascend-sync]', ...a); } catch { /* ignore */ } };
 const META_KEY = 'ascend_sync_meta';
 const BACKUP_KEY = 'ascend_local_backup';
 const DEBOUNCE_MS = 1500;
@@ -194,14 +195,19 @@ async function backgroundCheck() {
   } catch (e) { if (isNetworkError(e)) setStatus('offline'); }
 }
 
-/* ---- driven by the gate ---- */
+/* ---- start sync for a restored/active session (self-driven; NOT dependent on
+   the auth-gate or on opening Profile). Safe to call multiple times. ---- */
 function beginSync(sess) {
+  if (!sess || !sess.user) return;
   session = sess; uid = sess.user.id;
   renderAccount(); App().refreshProfile();
-  if (_syncedUid === uid) return;                 // gate may signal the session more than once — reconcile only once
+  if (_syncedUid === uid) return;                 // reconcile only once per session
   _syncedUid = uid;
+  sdiag('session uid', String(uid).slice(0, 6));
   const meta = loadMeta();
-  if (meta.userId === uid) { setStatus('synced'); backgroundCheck(); } else { reconcileFirstConnect(); }
+  let p;
+  if (meta.userId === uid) { setStatus('synced'); p = backgroundCheck(); } else { p = reconcileFirstConnect(); }
+  Promise.resolve(p).then(() => sdiag('completed')).catch(() => sdiag('completed'));
 }
 async function handleLocalWipe() { try { await auth.signOut(); } catch { /* ignore */ } saveMeta({}); session = null; uid = null; _syncedUid = null; status = 'local'; }
 
@@ -282,12 +288,18 @@ window.AscendCloud = {
 
 function init() {
   if (!cloudConfigured || !App()) return;
+  sdiag('init');
   App().onSave(queuePush);
   window.addEventListener('online', () => { if (session && dirty) pushNow(); });
+  // Cloud-sync owns sync-start: react to every session-bearing auth event itself,
+  // so it never depends on the auth-gate's timing or on Profile being opened.
   auth.onChange((event, sess) => {
-    if (event === 'SIGNED_OUT') { session = null; uid = null; _syncedUid = null; paused = false; dirty = false; saveMeta({}); setStatus('local'); App().refreshProfile(); }
-    else if (sess && (event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED')) { session = sess; uid = sess.user.id; renderAccount(); App().refreshProfile(); }
+    if (event === 'SIGNED_OUT') { session = null; uid = null; _syncedUid = null; paused = false; dirty = false; saveMeta({}); setStatus('local'); renderAccount(); App().refreshProfile(); return; }
+    if (sess && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED')) beginSync(sess);
   });
+  // Self-start on load: if a session already exists (INITIAL_SESSION may have fired
+  // before we subscribed), begin sync now — no Profile interaction required.
+  auth.getSession().then(s => { if (s) beginSync(s); }).catch(() => { /* ignore */ });
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
 else init();
