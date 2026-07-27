@@ -133,6 +133,18 @@ const STAT_RANKS = [
   { min: 90, key: 'rank.elite' },
 ];
 
+/* Premium themes. Each theme only overrides existing CSS variables (in
+   css/styles.css via :root[data-theme="…"]) — no component CSS is duplicated.
+   The `bg` / `colors` here drive the preview card + <meta theme-color>. */
+const THEMES = [
+  { id: 'original', nameKey: 'theme.original', bg: '#0B0F14', colors: ['#3DDC97', '#4C8DFF', '#A66BFF'] },
+  { id: 'ember',    nameKey: 'theme.ember',    bg: '#16100C', colors: ['#FF8A3D', '#FF5E5E', '#FFB020'] },
+  { id: 'ocean',    nameKey: 'theme.ocean',    bg: '#071019', colors: ['#2DD4BF', '#38BDF8', '#6366F1'] },
+  { id: 'cyber',    nameKey: 'theme.cyber',    bg: '#0A0812', colors: ['#00E5FF', '#7C4DFF', '#FF2ED1'] },
+  { id: 'gold',     nameKey: 'theme.gold',     bg: '#0A0A0A', colors: ['#E8C36B', '#C9A24A', '#F5D889'] },
+];
+const THEME_IDS = THEMES.map(t => t.id);
+
 if (typeof window !== 'undefined') {
-  window.AscendConfig = { FEATURE_FLAGS, PLANS, NEVER_PAYWALLED, ONBOARDING_GOALS, CHARACTER_STATS, STAT_RANKS, planFor, planLimit };
+  window.AscendConfig = { FEATURE_FLAGS, PLANS, NEVER_PAYWALLED, ONBOARDING_GOALS, CHARACTER_STATS, STAT_RANKS, THEMES, THEME_IDS, planFor, planLimit };
 }

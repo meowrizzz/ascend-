@@ -45,6 +45,7 @@ const DICT = {
     // Settings / profile fields
     'set.displayName': 'Отображаемое имя', 'set.displayNameHint': 'Необязательно',
     'set.motto': 'Девиз', 'set.language': 'Язык', 'set.theme': 'Тема', 'set.animations': 'Анимации',
+    'theme.original': 'Ascend Original', 'theme.ember': 'Ember', 'theme.ocean': 'Ocean', 'theme.cyber': 'Cyber', 'theme.gold': 'Gold',
     'set.firstDay': 'Первый день недели', 'set.timeFormat': 'Формат времени', 'set.missions': 'Ежедневные миссии',
     'set.notifications': 'Уведомления', 'set.privacyScreen': 'Скрывать чувствительные данные при открытии',
     'set.privacyScreenHint': 'Сначала показывать нейтральный экран, приватные элементы открываешь сам.',
@@ -201,6 +202,7 @@ const DICT = {
 
     'set.displayName': 'Display name', 'set.displayNameHint': 'Optional',
     'set.motto': 'Motto', 'set.language': 'Language', 'set.theme': 'Theme', 'set.animations': 'Animations',
+    'theme.original': 'Ascend Original', 'theme.ember': 'Ember', 'theme.ocean': 'Ocean', 'theme.cyber': 'Cyber', 'theme.gold': 'Gold',
     'set.firstDay': 'First day of week', 'set.timeFormat': 'Time format', 'set.missions': 'Daily missions',
     'set.notifications': 'Notifications', 'set.privacyScreen': 'Hide sensitive data on open',
     'set.privacyScreenHint': 'Show a neutral screen first; you open private items yourself.',

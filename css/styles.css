@@ -30,6 +30,10 @@
   --blue-glow:   rgba(76, 141, 255, 0.35);
   --violet-glow: rgba(166, 107, 255, 0.35);
 
+  /* Ambient background stops (radial highlight + linear end) — themeable */
+  --bg-a: #101922;
+  --bg-b: #090C11;
+
   /* Shape */
   --r-sm: 12px;
   --r-md: 18px;
@@ -69,8 +73,9 @@ body {
   position: fixed; inset: 0; z-index: 0; overflow: hidden;
   pointer-events: none;
   background:
-    radial-gradient(1200px 800px at 50% -10%, #101922 0%, transparent 60%),
-    linear-gradient(180deg, #0B0F14 0%, #090C11 100%);
+    radial-gradient(1200px 800px at 50% -10%, var(--bg-a) 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-b) 100%);
+  transition: background .4s var(--ease);
 }
 .glow {
   position: absolute; border-radius: 50%;
@@ -80,6 +85,50 @@ body {
 .glow--green  { width: 340px; height: 340px; background: var(--green-glow);  top: -60px; left: -80px; }
 .glow--blue   { width: 380px; height: 380px; background: var(--blue-glow);   bottom: 10%; right: -120px; animation-delay: -4s; }
 .glow--violet { width: 300px; height: 300px; background: var(--violet-glow); top: 40%; left: 30%; animation-delay: -8s; }
+
+/* =========================================================
+   Premium themes — override existing tokens only (no component
+   CSS duplication). Original = the base :root (no override).
+   Text stays high-contrast light on every dark palette.
+   ========================================================= */
+:root[data-theme="ember"] {
+  --bg:#16100C; --bg-2:#1C130E; --bg-a:#241612; --bg-b:#0E0907;
+  --surface: rgba(255,180,120,0.05); --surface-2: rgba(255,180,120,0.09);
+  --stroke: rgba(255,200,160,0.10); --stroke-strong: rgba(255,200,160,0.18);
+  --text:#FBF1E8; --text-dim:#C6AC98; --text-faint:#7E6656;
+  --green:#FF8A3D; --green-2:#F2701F; --blue:#FF5E5E; --blue-2:#E63946;
+  --violet:#FFB020; --violet-2:#F59E0B; --amber:#FFB020; --red:#FF5252;
+  --green-glow: rgba(255,138,61,0.35); --blue-glow: rgba(255,94,94,0.35); --violet-glow: rgba(255,176,32,0.35);
+}
+:root[data-theme="ocean"] {
+  --bg:#071019; --bg-2:#0A1622; --bg-a:#0C1B2A; --bg-b:#04090F;
+  --surface: rgba(120,200,255,0.05); --surface-2: rgba(120,200,255,0.09);
+  --stroke: rgba(140,200,255,0.10); --stroke-strong: rgba(140,200,255,0.18);
+  --text:#EAF4FB; --text-dim:#93AEC2; --text-faint:#556A7C;
+  --green:#2DD4BF; --green-2:#14B8A6; --blue:#38BDF8; --blue-2:#0EA5E9;
+  --violet:#6366F1; --violet-2:#4F46E5; --amber:#FBBF24; --red:#FB7185;
+  --green-glow: rgba(45,212,191,0.35); --blue-glow: rgba(56,189,248,0.35); --violet-glow: rgba(99,102,241,0.35);
+}
+:root[data-theme="cyber"] {
+  --bg:#0A0812; --bg-2:#100A1C; --bg-a:#160C2A; --bg-b:#05030B;
+  --surface: rgba(180,120,255,0.06); --surface-2: rgba(180,120,255,0.11);
+  --stroke: rgba(0,229,255,0.14); --stroke-strong: rgba(0,229,255,0.26);
+  --text:#F3F0FF; --text-dim:#A9A0C8; --text-faint:#6D6490;
+  --green:#00E5FF; --green-2:#00B8D4; --blue:#7C4DFF; --blue-2:#651FFF;
+  --violet:#FF2ED1; --violet-2:#E619B8; --amber:#FFE94D; --red:#FF3D71;
+  --green-glow: rgba(0,229,255,0.40); --blue-glow: rgba(124,77,255,0.40); --violet-glow: rgba(255,46,209,0.40);
+}
+:root[data-theme="gold"] {
+  --bg:#0A0A0A; --bg-2:#121212; --bg-a:#171204; --bg-b:#050505;
+  --surface: rgba(232,195,107,0.05); --surface-2: rgba(232,195,107,0.09);
+  --stroke: rgba(232,195,107,0.14); --stroke-strong: rgba(232,195,107,0.24);
+  --text:#F6F0E4; --text-dim:#B8AD94; --text-faint:#7C725C;
+  --green:#E8C36B; --green-2:#CBA34E; --blue:#C9A24A; --blue-2:#A9842F;
+  --violet:#F5D889; --violet-2:#E5C36B; --amber:#F0C24A; --red:#E5776B;
+  --green-glow: rgba(232,195,107,0.30); --blue-glow: rgba(201,162,74,0.30); --violet-glow: rgba(245,216,137,0.30);
+}
+/* Smooth palette change on theme switch */
+body, .card, .btn, .stat-cell, .habit-card, .habit-row { transition: background-color .35s var(--ease), border-color .35s var(--ease), color .35s var(--ease); }
 
 @keyframes float {
   from { transform: translate3d(0,0,0) scale(1); }
@@ -702,6 +751,26 @@ input.input[type="date"] { color-scheme: dark; }
 
 /* Sub-label under section ---------------------------------------------- */
 .section-sub { font-size: 13px; color: var(--text-dim); margin: -4px 4px 12px; }
+
+/* Theme picker cards --------------------------------------------------- */
+.theme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+.theme-card {
+  appearance: none; border: 1px solid var(--stroke); background: var(--surface); cursor: pointer;
+  font-family: inherit; color: var(--text); border-radius: var(--r-md); padding: 10px; text-align: left;
+  transition: transform .16s var(--ease), border-color .2s, box-shadow .2s;
+}
+.theme-card:active { transform: scale(.97); }
+.theme-card:hover { border-color: var(--stroke-strong); }
+.theme-card.active { border-color: var(--green); box-shadow: 0 8px 24px var(--green-glow); }
+.tc-preview { position: relative; height: 66px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.06); }
+.tc-preview .tc-dots { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; }
+.tc-preview .tc-dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+.tc-preview .tc-bar { position: absolute; left: 10px; right: 10px; bottom: 12px; height: 8px; border-radius: 999px; }
+.tc-preview .tc-chip { position: absolute; right: 10px; top: 8px; width: 26px; height: 16px; border-radius: 6px; opacity: .9; }
+.theme-card .tc-name { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 700; margin-top: 9px; padding: 0 2px; }
+.theme-card .tc-check { color: var(--green); font-weight: 800; opacity: 0; }
+.theme-card.active .tc-check { opacity: 1; }
+@media (min-width: 620px) { .theme-grid { grid-template-columns: repeat(3, 1fr); } }
 
 /* =========================================================
    Stage 1 — onboarding, settings, plans, privacy, missions

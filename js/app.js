@@ -67,7 +67,7 @@ function createDefaultState() {
     schemaVersion: SCHEMA_VERSION,
     user: { id: uid(), name: '', motto: '', avatar: '' },
     settings: {
-      language: 'ru', timezone: guessTz(), theme: 'dark', animations: 'full',
+      language: 'ru', timezone: guessTz(), theme: 'original', animations: 'full',
       firstDay: 1, timeFormat: '24', missions: true, notifications: false,
       privacyScreen: false, onboarded: false, accountType: 'guest', plan: 'free',
       analyticsConsent: false, hiddenStats: [],
@@ -627,7 +627,7 @@ function heroStreakCard(hero) {
   card.innerHTML = `
     <div class="ring-wrap">
       <svg width="132" height="132" viewBox="0 0 132 132">
-        <defs><linearGradient id="grad-green" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3DDC97"/><stop offset="1" stop-color="#4C8DFF"/></linearGradient></defs>
+        <defs><linearGradient id="grad-green" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--green)"/><stop offset="1" stop-color="var(--blue)"/></linearGradient></defs>
         <circle class="ring-bg" cx="66" cy="66" r="${R}" stroke-width="11"/>
         <circle class="ring-fg" cx="66" cy="66" r="${R}" stroke-width="11" stroke-dasharray="${C}" stroke-dashoffset="${C}" id="heroRing"/>
       </svg>
@@ -1146,8 +1146,8 @@ function lineChartCard() {
   if (!has) { card.innerHTML += `<div class="empty" style="padding:24px"><div class="em">📈</div>${esc(t('common.noData'))}</div>`; return card; }
   const W = 320, H = 130, pad = 6; const x = i => pad + (i * (W - 2 * pad) / 13); const y = v => H - pad - ((v - 1) / 9) * (H - 2 * pad);
   const path = arr => { let d = '', st = false; arr.forEach((v, i) => { if (v == null) { st = false; return; } d += (st ? ' L' : ' M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1); st = true; }); return d.trim(); };
-  card.innerHTML += `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${path(mood)}" fill="none" stroke="#4C8DFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="${path(energy)}" fill="none" stroke="#3DDC97" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${mood.map((v, i) => v != null ? `<circle cx="${x(i)}" cy="${y(v)}" r="2.6" fill="#4C8DFF"/>` : '').join('')}${energy.map((v, i) => v != null ? `<circle cx="${x(i)}" cy="${y(v)}" r="2.6" fill="#3DDC97"/>` : '').join('')}</svg>
-    <div style="display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--text-dim)"><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4C8DFF;margin-right:5px"></i>${esc(t('stats.mood'))}</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3DDC97;margin-right:5px"></i>${esc(t('stats.energy'))}</span></div>`;
+  card.innerHTML += `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${path(mood)}" fill="none" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="${path(energy)}" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${mood.map((v, i) => v != null ? `<circle cx="${x(i)}" cy="${y(v)}" r="2.6" fill="var(--blue)"/>` : '').join('')}${energy.map((v, i) => v != null ? `<circle cx="${x(i)}" cy="${y(v)}" r="2.6" fill="var(--green)"/>` : '').join('')}</svg>
+    <div style="display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--text-dim)"><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--blue);margin-right:5px"></i>${esc(t('stats.mood'))}</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--green);margin-right:5px"></i>${esc(t('stats.energy'))}</span></div>`;
   return card;
 }
 function barChartCard() {
@@ -1280,7 +1280,7 @@ screens.settings = () => {
   wrap.appendChild(sectionTitle(t('set.section.prefs')));
   const prefs = el('div', 'card'); prefs.style.padding = '14px 16px';
   prefs.appendChild(selectRow(t('set.language'), LANGS.map(l => ({ v: l.id, label: l.flag + ' ' + l.label })), s.language, v => { setLang(v); s.language = v; save(); applyStaticI18n(); toast('info', '🌐', t('toast.langChanged'), ''); go('settings'); }));
-  prefs.appendChild(selectRow(t('set.theme'), [{ v: 'dark', label: '🌙 Dark' }], s.theme, v => { s.theme = v; save(); }));
+  prefs.appendChild(themeCards());
   prefs.appendChild(selectRow(t('set.animations'), [{ v: 'full', label: t('anim.full') }, { v: 'reduced', label: t('anim.reduced') }, { v: 'off', label: t('anim.off') }], s.animations, v => { s.animations = v; save(); applyAnimationLevel(); }));
   prefs.appendChild(selectRow(t('set.firstDay'), [{ v: 1, label: t('day.mon') }, { v: 0, label: t('day.sun') }], s.firstDay, v => { s.firstDay = +v; save(); }));
   prefs.appendChild(selectRow(t('set.timeFormat'), [{ v: '24', label: t('tf.24') }, { v: '12', label: t('tf.12') }], s.timeFormat, v => { s.timeFormat = v; save(); }));
@@ -1299,6 +1299,33 @@ function selectRow(label, options, value, onChange) {
   const row = el('div', 'setting-row');
   row.innerHTML = `<div class="sr-label">${esc(label)}</div><div class="seg" role="group">${options.map(o => `<button class="seg-btn ${String(o.v) === String(value) ? 'active' : ''}" data-v="${o.v}">${esc(o.label)}</button>`).join('')}</div>`;
   $$('.seg-btn', row).forEach(b => b.onclick = () => { $$('.seg-btn', row).forEach(x => x.classList.remove('active')); b.classList.add('active'); onChange(b.dataset.v); });
+  return row;
+}
+// Premium theme picker with live-color preview cards. Applies immediately,
+// persists to settings.theme (synced via state_json), reuses only CSS vars.
+function themeCards() {
+  const themes = (window.AscendConfig && window.AscendConfig.THEMES) || [];
+  const cur = currentThemeId();
+  const row = el('div', 'setting-row');
+  row.innerHTML = `<div class="sr-label">${esc(t('set.theme'))}</div>
+    <div class="theme-grid" role="radiogroup" aria-label="${esc(t('set.theme'))}">
+      ${themes.map(th => {
+        const [c1, c2, c3] = th.colors;
+        return `<button class="theme-card ${th.id === cur ? 'active' : ''}" role="radio" aria-checked="${th.id === cur}" data-theme-id="${th.id}">
+          <div class="tc-preview" style="background:linear-gradient(180deg, ${th.bg}, ${th.bg})">
+            <div class="tc-dots"><span class="tc-dot" style="color:${c1};background:${c1}"></span><span class="tc-dot" style="color:${c2};background:${c2}"></span><span class="tc-dot" style="color:${c3};background:${c3}"></span></div>
+            <span class="tc-chip" style="background:${c2}"></span>
+            <div class="tc-bar" style="background:linear-gradient(90deg, ${c2}, ${c3})"></div>
+          </div>
+          <div class="tc-name"><span>${esc(t(th.nameKey))}</span><span class="tc-check">✓</span></div>
+        </button>`;
+      }).join('')}
+    </div>`;
+  $$('.theme-card', row).forEach(card => card.onclick = () => {
+    const id = card.dataset.themeId;
+    settings().theme = id; save(); applyTheme();
+    $$('.theme-card', row).forEach(c => { const on = c === card; c.classList.toggle('active', on); c.setAttribute('aria-checked', on); });
+  });
   return row;
 }
 function toggleRow(label, hint, value, onChange) {
@@ -1368,7 +1395,7 @@ function openImportDialog() {
         <p class="danger-note">${esc(t('import.confirmBody'))}</p>
         <div class="backup-summary"><div class="bs-row"><span>${esc(t('import.created'))}</span><span>${esc(when)}</span></div><div class="bs-row"><span>${esc(t('nav.habits'))}</span><span>${s.habits}</span></div><div class="bs-row"><span>${esc(t('stats.journalRec'))}</span><span>${s.journalDays}</span></div><div class="bs-row"><span>${esc(t('ach.title'))}</span><span>${s.achievements}</span></div></div>
         <div class="row mt24"><button class="btn btn--ghost" data-close>${esc(t('common.cancel'))}</button><button class="btn btn--blue" id="doImport">${esc(t('import.restore'))}</button></div>`);
-      $('#doImport').onclick = () => { state = res.state; StorageService.saveState(state); showSaved(); setLang(settings().language || 'ru'); applyStaticI18n(); applyAnimationLevel(); reconcileAchievements(); checkAchievements(true); closeModal(); go('home'); toast('ach', '✅', t('toast.imported'), ''); };
+      $('#doImport').onclick = () => { state = res.state; StorageService.saveState(state); showSaved(); setLang(settings().language || 'ru'); applyStaticI18n(); applyAnimationLevel(); applyTheme(); reconcileAchievements(); checkAchievements(true); closeModal(); go('home'); toast('ach', '✅', t('toast.imported'), ''); };
     };
     reader.onerror = () => toast('info', '⚠️', t('import.errBody'), '');
     reader.readAsText(file);
@@ -1404,7 +1431,7 @@ function openDeleteAll() {
     state = StorageService.deleteAllData();
     if (C && C.afterLocalWipe) C.afterLocalWipe();
     showSaved(); closeModal(); habitTab = 'good'; catalogTab = 'good'; sensitiveRevealed = false;
-    setLang(settings().language); applyStaticI18n(); applyAnimationLevel(); startOnboarding(); render();
+    setLang(settings().language); applyStaticI18n(); applyAnimationLevel(); applyTheme(); startOnboarding(); render();
     toast('info', '🗑', t('toast.wiped'), '');
   };
 }
@@ -1618,6 +1645,15 @@ function applyStaticI18n() {
   document.documentElement.lang = getLang();
 }
 function applyAnimationLevel() { document.body.classList.remove('anim-reduced', 'anim-off'); const a = settings().animations; if (a === 'reduced') document.body.classList.add('anim-reduced'); if (a === 'off') document.body.classList.add('anim-off'); }
+// Resolve the current theme id (maps the legacy 'dark' value to 'original').
+function currentThemeId() { const ids = (window.AscendConfig && window.AscendConfig.THEME_IDS) || ['original']; const th = settings().theme; return ids.includes(th) ? th : 'original'; }
+function applyTheme() {
+  const th = currentThemeId();
+  document.documentElement.setAttribute('data-theme', th);
+  const def = window.AscendConfig && window.AscendConfig.THEMES && window.AscendConfig.THEMES.find(x => x.id === th);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta && def) meta.setAttribute('content', def.bg);
+}
 
 /* ---------------------------------------------------------
    20b. Diagnostics (dev only) — window.runSelfCheck()
@@ -1714,6 +1750,7 @@ function boot() {
   if (!localStorage.getItem(StorageService.KEY)) StorageService.saveState(state);
   setLang(settings().language || 'ru');
   applyAnimationLevel();
+  applyTheme();
   applyStaticI18n();
   $$('.nav-btn').forEach(b => b.onclick = () => go(b.dataset.screen));
   $('#crisisBtn').onclick = openCrisis;
@@ -1722,6 +1759,10 @@ function boot() {
   if (!settings().onboarded) startOnboarding();
   render();
 }
+// Apply the saved theme as early as possible so the auth/login screen is themed
+// too (before boot reveals the app). Idempotent; boot re-applies.
+try { applyTheme(); } catch { /* ignore */ }
+
 document.addEventListener('DOMContentLoaded', () => {
   // If the auth-gate module is present it decides when to boot (session check).
   // Safety net: if the gate never becomes active (crashed mid-load) enter local
